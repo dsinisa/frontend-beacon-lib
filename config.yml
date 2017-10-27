@@ -3,7 +3,7 @@ scripts:
     - '/bower_components/jquery/dist/jquery.js'
   plugins:
     - '/bower_components/ansi_up/ansi_up.js'
-    - '/bower_components/debug/debug.js'
+    - '/bower_components/visionmedia-debug/dist/debug.js'
   minify:
     inBuild: false
 serve:
