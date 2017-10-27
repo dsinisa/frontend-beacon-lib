@@ -1,0 +1,12 @@
+scripts:
+  vendors:
+    - '/bower_components/jquery/dist/jquery.js'
+  plugins:
+    - '/bower_components/ansi_up/ansi_up.js'
+    - '/bower_components/debug/debug.js'
+  minify:
+    inBuild: false
+serve:
+  mode: site
+layouts:
+  engine: pug

@@ -1,0 +1,17 @@
+{
+  "name": "untitled-frontend-debug-tool",
+  "version": "0.0.1",
+  "description": "debug tool",
+  "main": "index.js",
+  "scripts": {
+    "start": "export DEBUG_FD=1;export DEBUG=app:*; export DEBUG_COLORS=true; node index.js"
+  },
+  "author": "Dr. Sinisa <drsinisa@hotmail.com>",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "6.1.0",
+    "npm": "3.9.0"
+  },
+  "dependencies": {
+  }
+}
