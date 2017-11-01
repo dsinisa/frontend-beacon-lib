@@ -2,9 +2,15 @@
 
 console.hook (boolean) - override console.log with hook function (also debug,info,warn,error). default is true
 console.globalLogFn (string) - globalLogFn = 'Log'  - export console.'Log' as the original console.log. default is 'Log'
+console.lineNumbers (boolean) - print line number & filename before console output. default is true
+console.mute (boolean) - do not output anything to browser console
 debugLib.hook (boolean) - redirect all debug lib output into console.log, which can then be overriden if console.hook is enabled. default is true
 debugLib.hookConsole (boolean) - override console.log (also debug,info,warn,error) with debug lib loggers: console:log, console:info etc... default is true
-debugLib.enable (string) - does debug.enable(string). default is 'console:* app:*' 
+debugLib.enable (string) - does debug.enable(string). default is 'console:* app:*'
+report.onError (boolean) - hook into window.onerror and send report to remote url
+report.ajaxOptions (object) - {method: 'POST', url: '/error'}
+report.url,errorText,errorName,errorStack,lineNumber,columnNumber,userAgent,browser,os,mobile - field to include in report
+  
 
 ## License
 

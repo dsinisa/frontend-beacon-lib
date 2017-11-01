@@ -33,4 +33,4 @@ log('test');
 
 console.log('aaaaaa', {test: 1});
 
-
+err
