@@ -1,4 +1,20 @@
+
+var loggingOptions = {
+    console: {
+        hook: true,
+        globalLogFn: 'Log'
+    },
+    debugLib: {
+        hook: true,
+        hookConsole: true,
+        enable: 'console:* app:*'
+    }
+};
+
+
 (function(window) {
+
+    var options = window['loggingOptions'] || {};
 
     if (window.console) {
 
@@ -27,30 +43,38 @@
             return args;
         };
 
-        window.console.debug = function() {
-            consoleDebug.apply(window.console, appendArgs(arguments, 'console.debug'));
-        };
+        if (options.console && options.console.hook) {
 
-        window.console.log = function() {
-            consoleLog.apply(window.console, appendArgs(arguments, 'console.log'));
-        };
+            window.console.debug = function () {
+                consoleDebug.apply(window.console, appendArgs(arguments, 'console.debug'));
+            };
 
-        window.console.error = function() {
-            consoleError.apply(window.console, appendArgs(arguments, 'console.error'));
-        };
+            window.console.log = function () {
+                consoleLog.apply(window.console, appendArgs(arguments, 'console.log'));
+            };
 
-        window.console.info = function() {
-            consoleInfo.apply(window.console, appendArgs(arguments, 'console.info'));
-        };
+            window.console.error = function () {
+                consoleError.apply(window.console, appendArgs(arguments, 'console.error'));
+            };
 
-        window.console.warn = function() {
-            consoleWarn.apply(window.console, appendArgs(arguments, 'console.warn'));
-        };
+            window.console.info = function () {
+                consoleInfo.apply(window.console, appendArgs(arguments, 'console.info'));
+            };
 
-        window.console.Log = consoleLog.bind(window.console);
+            window.console.warn = function () {
+                consoleWarn.apply(window.console, appendArgs(arguments, 'console.warn'));
+            };
 
-        window.console.DebugLog = function() {
-            consoleLog.apply(window.console, appendArgs(arguments, 'debug'));
+        }
+
+        if (options.console && options.console.globalLogFn) {
+            window.console[options.globalLogFn] = consoleLog.bind(window.console);
+        }
+
+        if (options.debugLib && options.debugLib.hook) {
+            window.console.DebugLog = function() {
+                consoleLog.apply(window.console, appendArgs(arguments, 'debug'));
+            }
         }
 
     }
