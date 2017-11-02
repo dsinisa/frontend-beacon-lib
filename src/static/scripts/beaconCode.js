@@ -1,46 +1,16 @@
 
-var loggingOptions = {
-    console: {
-        hook: true,
-        globalLogFn: 'Log',
-        lineNumbers: true,
-        mute: false
-    },
-    debugLib: {
-        hook: true,
-        hookConsole: true,
-        enable: 'console:* app:*'
-    },
-    report: {
-        onError: true,
-        ajaxOptions: {
-            method: 'POST',
-            url: '/error'
-        },
-        url: true,
-        errorText: true,
-        errorName: true,
-        errorStack: true,
-        lineNumber: true,
-        columnNumber: true,
-        userAgent: true,
-        browser: true,
-        os: true,
-        mobile: true
-    }
-};
 
 
-(function(window) {
+(function(window, navigator) {
 
-    var options = window['loggingOptions'] || {};
-
-    var userInfo = {};
+    var reportOnInit = function() {
+        var report = getBaseReport();
+        report.type = 'init';
+        track(report);
+    };
 
     var initOnError = function() {
         var _onError = window.onerror;
-
-        getUserInfo();
 
         window.onerror = function(e, url, lineNumber, columnNumber, eObject){
             if(_onError){
@@ -50,8 +20,9 @@ var loggingOptions = {
             eObject = eObject || {};
 
             var report = getBaseReport(),
-                _report = options.report;
+                _report = options.report.fields;
 
+            report.type = 'error';
             if(_report.url) report.url = location.href;
             if(_report.errorText) report.errorText = e;
             if(_report.errorName) report.errorName = eObject.name;
@@ -60,33 +31,77 @@ var loggingOptions = {
             if(_report.lineNumber) report.lineNumber = lineNumber;
             if(_report.columnNumber) report.columnNumber = columnNumber;
 
-            var ajaxOptions = options.report.ajaxOptions;
-            if(window.$ && $.ajax){
-                $.ajax({
-                    type: ajaxOptions.method,
-                    url: ajaxOptions.url,
-                    data: report
-                });
-            }
-            else{
-                ajax({
-                    method: ajaxOptions.method,
-                    url: ajaxOptions.url,
-                    params: report
-                });
-            }
+            track(report);
         };
     };
 
-    var ajax = function(oParams){
+    var generateUUID = function () {
+        var d = new Date().getTime();
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function'){
+            d += performance.now(); //use high-precision timer if available
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    };
+
+    var onAjaxDone = function() {
+        consoleLog('onAjaxDone');
+        ajaxDone = true;
+    };
+
+    var ajax = function(data, bSynchronous) {
+
+        ajaxDone = false;
+
+        var ajaxOptions = options.report.ajaxOptions;
+
+        if (navigator && navigator.sendBeacon) {
+            navigator.sendBeacon(ajaxOptions.url, JSON.stringify(data));
+            ajaxDone = true;
+            return;
+        }
+
+
+        if(window.$ && $.ajax && !ajaxOptions.builtIn){
+            var jqOptions = {
+                type: ajaxOptions.method,
+                url: ajaxOptions.url,
+                dataType: (ajaxOptions.sendJSON ? 'json' : undefined),
+                async: !ajaxOptions.synchronous,
+                data: data,
+                success: onAjaxDone,
+                error: onAjaxDone
+            };
+            if (bSynchronous) {
+                jqOptions.async = false;
+            }
+            return $.ajax(jqOptions);
+        }
+
+        var oParams = {
+            method: ajaxOptions.method,
+            url: ajaxOptions.url,
+            sendJSON: ajaxOptions.sendJSON,
+            params: data,
+            success: onAjaxDone,
+            failure: onAjaxDone
+        };
+
         var sUrl = oParams.url,
             method = oParams.method,
             params = oParams.params || {},
             sData = '',
-            bAsync = true,
+            bAsync = !ajaxOptions.synchronous,
             p,
             type = oParams.type || 'json',
             headers = oParams.headers || {};
+
+        if (bSynchronous) {
+            bAsync = false;
+        }
 
         /* clean up the '&' garbage */
         if(sData.replace(/\&/g, '') === ''){
@@ -158,6 +173,10 @@ var loggingOptions = {
 
             method = method.toUpperCase();
 
+            if (bAsync) {
+                oXhr.timeout = 10;
+            }
+
             if(method === 'GET'){
                 if(sData !== ''){
                     if(sUrl.indexOf('?') === -1){
@@ -165,10 +184,10 @@ var loggingOptions = {
                     }
                     sUrl += sData;
                 }
-                oXhr.open('GET', sUrl, true);
+                oXhr.open('GET', sUrl, bAsync);
             }
             else{
-                oXhr.open(method, sUrl, true);
+                oXhr.open(method, sUrl, bAsync);
                 oXhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
                 if( oParams.sendJSON ){
@@ -223,7 +242,7 @@ var loggingOptions = {
     };
 
     var getUserInfo = function(){
-        var unknown = 'Unknown';
+        var unknown = 'Unknown', result = {};
 
         // browser
         var nVer = navigator.appVersion,
@@ -370,16 +389,20 @@ var loggingOptions = {
                 break;
         }
 
-        userInfo.userAgent = navigator.userAgent;
-        userInfo.os = os +' '+ osVersion;
-        userInfo.browser = browser + ' ' + majorVersion;
-        userInfo.mobile = mobile;
+        result.userAgent = navigator.userAgent;
+        result.os = os +' '+ osVersion;
+        result.browser = browser + ' ' + majorVersion;
+        result.mobile = mobile;
+
+        result.sessionID = generateUUID();
+
+        return result;
     };
 
      var getBaseReport = function(){
 
          var report = {},
-             _report = options.report;
+             _report = options.report.fields;
 
          if(_report.userAgent) report.userAgent = userInfo.userAgent;
          if(_report.os) report.os = userInfo.os;
@@ -387,8 +410,52 @@ var loggingOptions = {
          if(_report.mobile) report.mobile = userInfo.mobile;
          if(_report.url) report.url = location.href;
 
+         report.sessionID = userInfo.sessionID;
+
          return report;
     };
+
+    var track = function(data) {
+        data.ts = new Date();
+        data.sessionID = userInfo.sessionID;
+
+        if (!options.report || !options.report.buffer) {
+            return ajax(data);
+        }
+
+        trackBuffer.push(data);
+    };
+
+    var delay = function (ms) {
+        var wd = 0;
+        var start = new Date();
+        while (!ajaxDone) {
+            var now = new Date();
+            if (now - start > ms)
+                return;
+            if (wd++ > ms * 1000)
+                return;
+        }
+    };
+
+    var flushBuffer = function(synchronous) {
+        if (!trackBuffer.length)
+            return;
+
+        var opt = options.report.beforeUnload || {};
+        ajax(trackBuffer, synchronous && opt.synchronous);
+        trackBuffer = [];
+        if (synchronous && opt.delay > 0) {
+            delay(opt.delay);
+        }
+    };
+
+    var options = window['loggingOptions'] || {};
+
+    var userInfo = getUserInfo();
+
+    var trackBuffer = [];
+    var ajaxDone = false;
 
     if (window.console) {
 
@@ -399,24 +466,39 @@ var loggingOptions = {
         var consoleWarn = window.console.warn;
 
         var lineNumber = function (fnName) {
-            var lines;
+            var lines, text;
             try {
                 throw new Error();
             } catch(e) {
                 try {
                     lines = e.stack.substr( e.stack.indexOf( fnName ) ).split( /(\r\n|\n|\r)/gm )[2].trim().split(' ');
-                    consoleLog( '%c >> ' + lines[ lines.length - 1 ] , 'color: red;' );
+                    text = lines[ lines.length - 1 ];
+                    consoleLog( '%c >> ' + text , 'color: red;' );
                 } catch(e) {}
             }
-            return '';
+            return text;
         };
 
         var consoleOutput = function(args, consoleFn, fnName) {
+            var lnText;
             if (options.console.lineNumbers && !options.console.mute) {
-                lineNumber(fnName);
+                lnText = lineNumber(fnName);
             }
             if (!options.console.mute) {
                 consoleFn.apply(window.console, args);
+            }
+
+            var data = {
+                type: fnName,
+                params: args
+            };
+
+            if (lnText) {
+                data.line = lnText;
+            }
+
+            if (options.report && options.report.console) {
+                track(data);
             }
         };
 
@@ -455,8 +537,34 @@ var loggingOptions = {
         }
     }
 
-    if (options.report && options.report.onError) {
-        initOnError();
+    if (options.report) {
+        if (options.report.onInit) {
+            reportOnInit();
+        }
+
+        if (options.report.onError) {
+            initOnError();
+        }
+
+        if (options.report.buffer) {
+            setInterval(flushBuffer, options.report.buffer * 1000);
+            var _onbeforeunload = window.onbeforeunload;
+            if (options.report.beforeUnload) {
+
+                var unloading = false;
+
+                window.onbeforeunload = function() {
+                    if (unloading)
+                        return;
+                    unloading = true;
+                    flushBuffer(true);
+                    if (_onbeforeunload) {
+                        _onbeforeunload.apply(window, arguments);
+                    }
+                };
+            }
+        }
     }
 
-})(window);
+
+})(window, navigator);

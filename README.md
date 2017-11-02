@@ -9,6 +9,9 @@ debugLib.hookConsole (boolean) - override console.log (also debug,info,warn,erro
 debugLib.enable (string) - does debug.enable(string). default is 'console:* app:*'
 report.onError (boolean) - hook into window.onerror and send report to remote url
 report.ajaxOptions (object) - {method: 'POST', url: '/error'}
+report.ajaxOptions.builtIn (boolean) - force using builtin ajax instead of $.ajax even if jquery exists
+report.console (boolean) - forward all console output through report url
+report.buffer (number) - buffer reports and send array every X seconds
 report.url,errorText,errorName,errorStack,lineNumber,columnNumber,userAgent,browser,os,mobile - field to include in report
   
 

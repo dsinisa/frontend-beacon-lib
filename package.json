@@ -1,13 +1,12 @@
 {
-  "name": "untitled-frontend-debug-tool",
+  "name": "frontend-beacon-lib",
   "version": "0.0.1",
-  "description": "debug tool",
-  "main": "index.js",
+  "description": "production plugin for browsers to send your web app's console.log output to url, using navigator.sendBeacon, or fallback to ajax requests",
   "scripts": {
     "start": "export DEBUG_FD=1;export DEBUG=app:*; export DEBUG_COLORS=true; node index.js"
   },
   "author": "Dr. Sinisa <drsinisa@hotmail.com>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": "6.1.0",
     "npm": "3.9.0"
