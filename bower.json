@@ -1,5 +1,6 @@
 {
   "name": "frontend-beacon-lib",
+  "version": "0.0.2",
   "description": "production plugin for browsers to send your web app's console.log output to url, using navigator.sendBeacon, or fallback to ajax requests",
   "main": "",
   "authors": [
@@ -21,7 +22,7 @@
     "test",
     "tests"
   ],
-  "dependencies": {
+  "devDependencies": {
     "ansi_up": "^2.0.2",
     "jquery": "^3.2.1",
     "visionmedia-debug": "^3.1.0"
